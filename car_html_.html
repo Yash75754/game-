@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Racing Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+            background-color: #222;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            color: white;
+        }
+        
+        #game-over-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            color: white;
+        }
+        
+        #road {
+            position: absolute;
+            width: 300px;
+            height: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #333;
+            background-image: 
+                linear-gradient(white 2px, transparent 2px),
+                linear-gradient(90deg, white 2px, transparent 2px);
+            background-size: 100px 100px;
+            animation: roadMove 1s linear infinite;
+        }
+        
+        @keyframes roadMove {
+            from { background-position: 0 0; }
+            to { background-position: 0 100px; }
+        }
+        
+        #player-car {
+            position: absolute;
+            width: 50px;
+            height: 90px;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: red;
+            z-index: 5;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 90"><rect x="5" y="10" width="40" height="60" fill="%23ff0000"/><rect x="10" y="5" width="30" height="10" fill="%23ff0000"/><rect x="15" y="0" width="20" height="5" fill="%23ff0000"/><circle cx="15" cy="75" r="10" fill="%23000"/><circle cx="35" cy="75" r="10" fill="%23000"/><rect x="10" y="15" width="30" height="30" fill="%23fff" opacity="0.3"/></svg>');
+            background-size: contain;
+        }
+        
+        .enemy-car {
+            position: absolute;
+            width: 50px;
+            height: 90px;
+            background-color: blue;
+            z-index: 5;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 90"><rect x="5" y="10" width="40" height="60" fill="%230000ff"/><rect x="10" y="5" width="30" height="10" fill="%230000ff"/><rect x="15" y="0" width="20" height="5" fill="%230000ff"/><circle cx="15" cy="75" r="10" fill="%23000"/><circle cx="35" cy="75" r="10" fill="%23000"/><rect x="10" y="15" width="30" height="30" fill="%23fff" opacity="0.3"/></svg>');
+            background-size: contain;
+        }
+        
+        #score-display {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            z-index: 5;
+        }
+        
+        #player-name-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 24px;
+            z-index: 5;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin-top: 20px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        input {
+            padding: 10px;
+            font-size: 18px;
+            margin-bottom: 20px;
+            width: 200px;
+        }
+        
+        #boost-meter {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 100px;
+            height: 20px;
+            background-color: #555;
+            border-radius: 10px;
+            overflow: hidden;
+            z-index: 5;
+        }
+        
+        #boost-fill {
+            height: 100%;
+            width: 0%;
+            background-color: #ffcc00;
+            transition: width 0.1s;
+        }
+        
+        @media (max-width: 600px) {
+            #road {
+                width: 200px;
+            }
+            
+            #player-car, .enemy-car {
+                width: 40px;
+                height: 70px;
+            }
+            
+            #score-display, #player-name-display {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="road"></div>
+        <div id="player-car"></div>
+        <div id="score-display">Score: 0</div>
+        <div id="player-name-display"></div>
+        <div id="boost-meter">
+            <div id="boost-fill"></div>
+        </div>
+        
+        <div id="start-screen">
+            <h1>Car Racing Game</h1>
+            <input type="text" id="player-name" placeholder="Enter your name" maxlength="15">
+            <button id="start-button">Start Game</button>
+        </div>
+        
+        <div id="game-over-screen">
+            <h1>Game Over</h1>
+            <h2 id="final-score">Score: 0</h2>
+            <button id="restart-button">Play Again</button>
+        </div>
+    </div>
+
+    <audio id="background-music" loop>
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="crash-sound">
+        <source src="https://www.soundjay.com/mechanical/sounds/car-crash-01.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="boost-sound">
+        <source src="https://www.soundjay.com/mechanical/sounds/car-acceleration-01.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // Game elements
+        const gameContainer = document.getElementById('game-container');
+        const road = document.getElementById('road');
+        const playerCar = document.getElementById('player-car');
+        const scoreDisplay = document.getElementById('score-display');
+        const playerNameDisplay = document.getElementById('player-name-display');
+        const startScreen = document.getElementById('start-screen');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const finalScoreDisplay = document.getElementById('final-score');
+        const startButton = document.getElementById('start-button');
+        const restartButton = document.getElementById('restart-button');
+        const playerNameInput = document.getElementById('player-name');
+        const boostMeter = document.getElementById('boost-meter');
+        const boostFill = document.getElementById('boost-fill');
+        
+        // Audio elements
+        const bgMusic = document.getElementById('background-music');
+        const crashSound = document.getElementById('crash-sound');
+        const boostSound = document.getElementById('boost-sound');
+        
+        // Game variables
+        let playerName = '';
+        let score = 0;
+        let gameSpeed = 2;
+        let enemySpeed = 2;
+        let gameInterval;
+        let enemyInterval;
+        let scoreInterval;
+        let isGameOver = false;
+        let isBoosting = false;
+        let boostLevel = 100;
+        let boostInterval;
+        
+        // Player car position
+        let playerPosition = {
+            x: window.innerWidth / 2,
+            y: window.innerHeight - 100
+        };
+        
+        // Road boundaries
+        const roadLeft = (window.innerWidth - road.offsetWidth) / 2;
+        const roadRight = roadLeft + road.offsetWidth;
+        
+        // Initialize game
+        function initGame() {
+            // Set player name
+            playerName = playerNameInput.value.trim() || 'Player';
+            playerNameDisplay.textContent = playerName;
+            
+            // Hide start screen
+            startScreen.style.display = 'none';
+            
+            // Reset game state
+            score = 0;
+            gameSpeed = 2;
+            enemySpeed = 2;
+            isGameOver = false;
+            boostLevel = 100;
+            updateBoostMeter();
+            
+            // Clear any existing enemies
+            document.querySelectorAll('.enemy-car').forEach(car => car.remove());
+            
+            // Position player car
+            playerPosition.x = window.innerWidth / 2;
+            updatePlayerPosition();
+            
+            // Start game loops
+            gameInterval = setInterval(updateGame, 16);
+            enemyInterval = setInterval(spawnEnemy, 2000);
+            scoreInterval = setInterval(updateScore, 100);
+            
+            // Play background music
+            bgMusic.volume = 0.3;
+            bgMusic.play();
+        }
+        
+        // Update game state
+        function updateGame() {
+            // Increase difficulty over time
+            gameSpeed += 0.001;
+            enemySpeed += 0.001;
+            
+            // Move enemies
+            document.querySelectorAll('.enemy-car').forEach(car => {
+                const carTop = parseInt(car.style.top) || 0;
+                car.style.top = (carTop + enemySpeed) + 'px';
+                
+                // Check if enemy is off screen
+                if (carTop > window.innerHeight) {
+                    car.remove();
+                }
+                
+                // Check collision
+                if (checkCollision(playerCar, car)) {
+                    gameOver();
+                }
+            });
+        }
+        
+        // Spawn enemy cars
+        function spawnEnemy() {
+            if (isGameOver) return;
+            
+            const enemyCar = document.createElement('div');
+            enemyCar.className = 'enemy-car';
+            
+            // Random position within road boundaries
+            const leftPosition = roadLeft + Math.random() * (road.offsetWidth - 50);
+            
+            enemyCar.style.left = leftPosition + 'px';
+            enemyCar.style.top = '-90px';
+            
+            gameContainer.appendChild(enemyCar);
+        }
+        
+        // Update score
+        function updateScore() {
+            if (isGameOver) return;
+            
+            score += 1;
+            scoreDisplay.textContent = `Score: ${score}`;
+        }
+        
+        // Check collision between two elements
+        function checkCollision(element1, element2) {
+            const rect1 = element1.getBoundingClientRect();
+            const rect2 = element2.getBoundingClientRect();
+            
+            return !(
+                rect1.right < rect2.left || 
+                rect1.left > rect2.right || 
+                rect1.bottom < rect2.top || 
+                rect1.top > rect2.bottom
+            );
+        }
+        
+        // Game over
+        function gameOver() {
+            isGameOver = true;
+            
+            // Stop game loops
+            clearInterval(gameInterval);
+            clearInterval(enemyInterval);
+            clearInterval(scoreInterval);
+            clearInterval(boostInterval);
+            
+            // Play crash sound
+            crashSound.currentTime = 0;
+            crashSound.play();
+            
+            // Stop background music
+            bgMusic.pause();
+            bgMusic.currentTime = 0;
+            
+            // Show game over screen
+            finalScoreDisplay.textContent = `Score: ${score}`;
+            gameOverScreen.style.display = 'flex';
+        }
+        
+        // Restart game
+        function restartGame() {
+            gameOverScreen.style.display = 'none';
+            initGame();
+        }
+        
+        // Update player car position
+        function updatePlayerPosition() {
+            playerCar.style.left = (playerPosition.x - playerCar.offsetWidth / 2) + 'px';
+        }
+        
+        // Handle keyboard input
+        function handleKeyDown(e) {
+            if (isGameOver) return;
+            
+            const moveAmount = isBoosting ? 15 : 10;
+            
+            switch(e.key) {
+                case 'ArrowLeft':
+                    playerPosition.x = Math.max(roadLeft + playerCar.offsetWidth / 2, playerPosition.x - moveAmount);
+                    updatePlayerPosition();
+                    break;
+                case 'ArrowRight':
+                    playerPosition.x = Math.min(roadRight - playerCar.offsetWidth / 2, playerPosition.x + moveAmount);
+                    updatePlayerPosition();
+                    break;
+                case 'Shift':
+                    if (boostLevel > 0) {
+                        startBoost();
+                    }
+                    break;
+            }
+        }
+        
+        function handleKeyUp(e) {
+            if (e.key === 'Shift') {
+                stopBoost();
+            }
+        }
+        
+        // Boost functions
+        function startBoost() {
+            if (isBoosting || boostLevel <= 0) return;
+            
+            isBoosting = true;
+            boostSound.currentTime = 0;
+            boostSound.play();
+            
+            boostInterval = setInterval(() => {
+                boostLevel -= 1;
+                updateBoostMeter();
+                
+                if (boostLevel <= 0) {
+                    stopBoost();
+                }
+            }, 50);
+        }
+        
+        function stopBoost() {
+            isBoosting = false;
+            clearInterval(boostInterval);
+            
+            // Recharge boost
+            const rechargeInterval = setInterval(() => {
+                boostLevel += 0.5;
+                updateBoostMeter();
+                
+                if (boostLevel >= 100) {
+                    clearInterval(rechargeInterval);
+                }
+            }, 50);
+        }
+        
+        function updateBoostMeter() {
+            boostFill.style.width = `${boostLevel}%`;
+        }
+        
+        // Touch controls for mobile
+        let touchStartX = 0;
+        
+        function handleTouchStart(e) {
+            touchStartX = e.touches[0].clientX;
+        }
+        
+        function handleTouchMove(e) {
+            if (isGameOver) return;
+            
+            const touchX = e.touches[0].clientX;
+            const diff = touchX - touchStartX;
+            
+            playerPosition.x += diff;
+            playerPosition.x = Math.max(roadLeft + playerCar.offsetWidth / 2, 
+                                      Math.min(roadRight - playerCar.offsetWidth / 2, playerPosition.x));
+            
+            updatePlayerPosition();
+            touchStartX = touchX;
+        }
+        
+        // Event listeners
+        startButton.addEventListener('click', initGame);
+        restartButton.addEventListener('click', restartGame);
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
+        document.addEventListener('touchstart', handleTouchStart);
+        document.addEventListener('touchmove', handleTouchMove);
+        
+        // Prevent scrolling on touch devices
+        document.addEventListener('touchmove', (e) => {
+            if (!isGameOver) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    </script>
+</body>
+</html>
